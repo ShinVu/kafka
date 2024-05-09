@@ -20,6 +20,7 @@
 	"forwardPorts": [],
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	"remoteUser": "root",
+	"postCreateCommand": "cd $KAFKA_HOME; KAFKA_CLUSTER_ID=\"$(bin/kafka-storage.sh random-uuid)\"; bin/kafka-storage.sh format -t $KAFKA_CLUSTER_ID -c config/kraft/server.properties",
 	"containerEnv": {
 		"KAFKA_HOME": "/opt/bitnami/kafka"
 	},
