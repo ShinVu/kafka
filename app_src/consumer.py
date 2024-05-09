@@ -10,12 +10,12 @@ def json_deserializer(data):
     Args:
         data: The data to deserialize.
     """
-    return json.load(data)
+    return json.loads(data)
 
 
 consumer_conf = {'bootstrap.servers': 'kafka:9092',
-            
-                     'auto.offset.reset': "earliest"}
+                'group.id': '1',
+            'auto.offset.reset': "earliest"}
  
 consumer = Consumer(consumer_conf)
 
@@ -31,7 +31,7 @@ while True:
         user = json_deserializer(msg.value())
 
         if user is not None:
-            print(user)
+            print(f"User name: {user['name']}, year: {user['year']}")
     except KeyboardInterrupt:
         break
 
