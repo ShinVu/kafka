@@ -1,11 +1,3 @@
-networks:
-  kafka_tier:
-    driver: bridge
-  producer_kafka_tier:
-    driver: bridge
-  consumer_kafka_tier:
-    driver: bridge
-
 services:
   producer:
     container_name: producer
@@ -49,6 +41,7 @@ services:
     # Add workspace as current working directory 
     volumes:
       - kafka_0_data:/bitnami/kafka
+      - ../jmx-exporter:/opt/jmx-exporter
     # Provide environment for kafka to run Kraft 
     environment:
       # KRaft settings
@@ -66,15 +59,27 @@ services:
       - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=3
       - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3
       - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
+      # JMX Exporter
+      - EXTRA_ARGS='-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml'
+
+    healthcheck:
+      test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9092; exit $$?;'"
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   kafka-1:
     container_name: kafka-1
     image: bitnami/kafka
     # Add workspace as current working directory
     networks:
+      - producer_kafka_tier
+      - consumer_kafka_tier
       - kafka_tier
     volumes:
       - kafka_1_data:/bitnami/kafka
+      - ../jmx-exporter:/opt/jmx-exporter
     environment:
       # KRaft settings
       - KAFKA_CFG_NODE_ID=1
@@ -91,15 +96,27 @@ services:
       - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=3
       - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3
       - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
+       # JMX Exporter
+      # - EXTRA_ARGS="-Xms128m -Xmx256m -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml"
+
+    healthcheck:
+      test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9092; exit $$?;'"
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   kafka-2:
     container_name: kafka-2
     image: bitnami/kafka
     networks:
+      - producer_kafka_tier
+      - consumer_kafka_tier
       - kafka_tier
     # Add workspace as current working directory 
     volumes:
       - kafka_2_data:/bitnami/kafka
+      - ../jmx-exporter:/opt/jmx-exporter
     environment:
       # KRaft settings
       - KAFKA_CFG_NODE_ID=2
@@ -116,23 +133,117 @@ services:
       - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=3
       - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3
       - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
+     # JMX Exporter
+      # - EXTRA_ARGS= "-Xms128m -Xmx256m -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml"
+      
+    healthcheck:
+      test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9092; exit $$?;'"
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 30s    
 
+  #Kafka ui service
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    volumes:
+      - ../kafka/kafka_ui/config.yml:/etc/kafkaui/dynamic_config.yaml
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+    networks:
+      - kafka_tier
+    ports:
+      - '80:8080'
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider localhost:8080 || exit 1
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  #Services for metrics and reporters
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    volumes:
+      - ../prometheus:/etc/prometheus
+      - prom_data:/prometheus
+    networks:
+      - kafka_tier
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider localhost:9090 || exit 1
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+      
+  kafka-exporter:
+    image: docker.io/bitnami/kafka-exporter:latest
+    depends_on:
+      kafka-0:
+        condition: service_healthy
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+    networks:
+      - kafka_tier
+    command: --kafka.server=kafka-0:9092 --kafka.server=kafka-1:9092 --kafka.server=kafka-2:9092
+    healthcheck:
+      test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9308; exit $$?;'"
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+      
+        
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ../grafana/provisioning:/etc/grafana/provisioning
+      - ../grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - kafka_tier
+    healthcheck:
+      test: curl --fail localhost:3000
+      interval: 5s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  kafka_tier:
+    driver: bridge
+  producer_kafka_tier:
+    driver: bridge
+  consumer_kafka_tier:
+    driver: bridge
+
+    
 volumes:
+  # Volumes for kafka nodes 
   kafka_0_data:
     driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: = ../kafka/kafka_0_data
   kafka_1_data:
     driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: = ../kafka/kafka_1_data
   kafka_2_data:
     driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: = ../kafka/kafka_2_data
+
+  # Volume for prometheous
+  prom_data:
+    driver: local
