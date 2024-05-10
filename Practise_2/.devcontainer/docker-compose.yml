@@ -142,6 +142,22 @@ services:
       retries: 3
       start_period: 30s    
 
+  # Schema registry 
+  schemaregistry:
+    container_name: schema-registry
+    image: bitnami/schema-registry
+    depends_on:
+      - kafka-0
+      - kafka-1
+      - kafka-2
+    environment:
+      - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081
+      - SCHEMA_REGISTRY_KAFKA_BROKERS=PLAINTEXT://kafka-0:9092,PLAINTEXT://kafka-1:9092,PLAINTEXT://kafka-2:9092
+    ports:
+      - 8081:8081
+    networks:
+      - kafka_tier
+
   #Kafka ui service
   kafka-ui:
     container_name: kafka-ui
