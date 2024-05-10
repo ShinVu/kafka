@@ -60,7 +60,7 @@ services:
       - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3
       - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
       # JMX Exporter
-      - EXTRA_ARGS='-javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml'
+      - EXTRA_ARGS=-Xms128m -Xmx256m -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml
 
     healthcheck:
       test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9092; exit $$?;'"
@@ -97,7 +97,7 @@ services:
       - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3
       - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
        # JMX Exporter
-      # - EXTRA_ARGS="-Xms128m -Xmx256m -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml"
+      - EXTRA_ARGS=-Xms128m -Xmx256m -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml
 
     healthcheck:
       test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9092; exit $$?;'"
@@ -134,8 +134,7 @@ services:
       - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3
       - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
      # JMX Exporter
-      # - EXTRA_ARGS= "-Xms128m -Xmx256m -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml"
-      
+      - EXTRA_ARGS=-Xms128m -Xmx256m -javaagent:/opt/jmx-exporter/jmx_prometheus_javaagent-0.19.0.jar=9404:/opt/jmx-exporter/kafka-2_0_0.yml
     healthcheck:
       test: "bash -c 'printf \"\" > /dev/tcp/127.0.0.1/9092; exit $$?;'"
       interval: 5s
