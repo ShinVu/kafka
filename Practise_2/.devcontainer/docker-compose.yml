@@ -1,0 +1,138 @@
+networks:
+  kafka_tier:
+    driver: bridge
+  producer_kafka_tier:
+    driver: bridge
+  consumer_kafka_tier:
+    driver: bridge
+
+services:
+  producer:
+    container_name: producer
+    
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    networks:
+      - producer_kafka_tier
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+    # Add workspace as current working directory 
+    volumes:
+      - ..:/workspace:cached
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+  consumer:
+    container_name: consumer
+    
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    networks:
+      - consumer_kafka_tier
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+    # Add workspace as current working directory 
+    volumes:
+      - ..:/workspace:cached
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+  kafka-0:
+    container_name: kafka-0
+    image: bitnami/kafka
+    networks:
+      - producer_kafka_tier
+      - consumer_kafka_tier
+      - kafka_tier
+    # Add workspace as current working directory 
+    volumes:
+      - kafka_0_data:/bitnami/kafka
+    # Provide environment for kafka to run Kraft 
+    environment:
+      # KRaft settings
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv
+      # Listeners
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      # Clustering
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=3
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
+
+  kafka-1:
+    container_name: kafka-1
+    image: bitnami/kafka
+    # Add workspace as current working directory
+    networks:
+      - kafka_tier
+    volumes:
+      - kafka_1_data:/bitnami/kafka
+    environment:
+      # KRaft settings
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv
+      # Listeners
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      # Clustering
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=3
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
+
+  kafka-2:
+    container_name: kafka-2
+    image: bitnami/kafka
+    networks:
+      - kafka_tier
+    # Add workspace as current working directory 
+    volumes:
+      - kafka_2_data:/bitnami/kafka
+    environment:
+      # KRaft settings
+      - KAFKA_CFG_NODE_ID=2
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka-0:9093,1@kafka-1:9093,2@kafka-2:9093
+      - KAFKA_KRAFT_CLUSTER_ID=abcdefghijklmnopqrstuv
+      # Listeners
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      # Clustering
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=3
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=3
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=2
+
+volumes:
+  kafka_0_data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: = ../kafka/kafka_0_data
+  kafka_1_data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: = ../kafka/kafka_1_data
+  kafka_2_data:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: = ../kafka/kafka_2_data

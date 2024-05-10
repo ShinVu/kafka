@@ -1,0 +1,28 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/debian
+{
+	"name": "kafka",
+	"dockerComposeFile": ["../docker-compose.yml"],
+	"service": "kafka",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				
+			]
+		},
+		"settings": {
+			
+		}
+	},
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [9092,9094],
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	"containerEnv": {
+		"KAFKA_HOME": "/opt/bitnami/kafka"
+	},
+	"shutdownAction": "none",
+	"workspaceFolder": "/workspace/kafka_src",
+	"remoteUser": "vscode"
+}
