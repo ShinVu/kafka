@@ -1,7 +1,7 @@
 from confluent_kafka.admin import AdminClient, NewTopic
 
 admin_client = AdminClient({
-    "bootstrap.servers" :"kafka_combined:9092"
+    "bootstrap.servers" :"kafka-0:9092,kafka-1:9092,kafka-2:9092"
 })
 
 topic_list = []

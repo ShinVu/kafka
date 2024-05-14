@@ -10,6 +10,7 @@ spring:
 kafka:
   clusters:
     - bootstrapServers: kafka-0:9092,kafka-1:9092, kafka-2:9092
+      schemaRegistry: http://schemaregistry:8081
       name: kafka
       metrics:
         type: JMX

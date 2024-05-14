@@ -136,7 +136,7 @@ if __name__ == '__main__':
                         help="Bootstrap broker(s) (host[:port])")
     parser.add_argument('-s', dest="schema_registry", required=True,
                         help="Schema Registry (http(s)://host[:port]")
-    parser.add_argument('-t', dest="topic", default="example_serde_avro",
+    parser.add_argument('-t', dest="topic", default="exercise_topic",
                         help="Topic name")
     parser.add_argument('-p', dest="specific", default="true",
                         help="Avro specific record")
