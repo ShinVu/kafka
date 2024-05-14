@@ -1,0 +1,7 @@
+*.tar
+*.jar
+*.csv
+*.tsv
+*.tgz
+*.txt
+!requirements.txt
